@@ -366,6 +366,8 @@ setTriggerStayOpen("Multi-Line Exits Trigger",1)</script>
 			<name>Map Trigger</name>
 			<script>print("Updating coords to " .. matches[2] .. matches[3] )
 clearWindow("map")
+xCords = matches[2]
+yCords = matches[3]
 displayMap(mapTable, matches[2],matches[3], 6)</script>
 			<triggerType>0</triggerType>
 			<conditonLineDelta>0</conditonLineDelta>
@@ -380,6 +382,43 @@ displayMap(mapTable, matches[2],matches[3], 6)</script>
 			<regexCodeList>
 				<string> You seem to be at coordinates (.*),(.*).</string>
 				<string>coordinates (.*), (.*).</string>
+			</regexCodeList>
+			<regexCodePropertyList>
+				<integer>1</integer>
+				<integer>1</integer>
+			</regexCodePropertyList>
+		</Trigger>
+		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="yes" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Prompt Trigger</name>
+			<script>
+if(table.getn(matches)==3) then
+  -- in combat
+  hp = matches[2]
+	sp = matches[3]
+else
+  -- prompt
+  hp = matches[2]
+  maxhp = matches[3]
+  sp = matches[4]
+  maxsp = matches[5]
+end
+-- dont like spacing here.
+
+hpbar:setValue(tonumber(hp), tonumber(maxhp),  "  HP: " .. hp .. "/" .. maxhp)
+spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)</script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList>
+				<string>^(.*)/(.*):(.*)/(.*)&gt;</string>
+				<string>^HP: (.*)  SP: (.*)</string>
 			</regexCodeList>
 			<regexCodePropertyList>
 				<integer>1</integer>
@@ -3113,23 +3152,52 @@ function readMapFiles(file)
     return mapTable
 end
 
+function displayTile(tile)
+  colors = {}
+	-- yes we should split this up since we can have multi-color tile
+	-- later.
+	
+	colors["=="] = "blue"
+	colors["OO"] = "green"
+	colors["oo"] = "green"
+	colors["\"\""] = "green_yellow"
+	colors["/\\"] = "brown"
+	colors["+O"] = "red"
+	colors["+o"] = "red"
+	colors["^^"] = "brown"
+	colors["::"] = "yellow"
+	
+	if colors[tile] then
+	  return "&lt;" .. colors[tile] .. "&gt;" .. tile .. "&lt;reset&gt;"
+	else
+	  return tile
+	end
+end
 function displayMap(mapTable, x,y, size)
 -- to do
 -- handle negative coordinate bullshit. (Tant is 0,0)
 -- check if we're on an edge
 -- do a &lt; &gt; around center
 -- color it
+-- when we get to -12 it breaks.
+-- abs(-12 + 18) = 6, - 6 = 0? edge of world.
+
+
 
   XOFFSET = 18
 	YOFFSET = 61
 	--print("Printing Y: " .. ((y + YOFFSET)-size) .. " to " .. (y + YOFFSET + size))
   --print("Printing X: " .. ((x + XOFFSET)-size) .. " to " .. (x + XOFFSET + size))
 	for line = (math.abs(y - YOFFSET)-size), (math.abs(y - YOFFSET) + size) do
-	   for tile = ((x + XOFFSET)-size), (x + XOFFSET + size) do
+	   for tile = (math.abs(x + XOFFSET)-size), math.abs(x + XOFFSET + size) do
 		    if line == (math.abs(y - YOFFSET)) and tile == (x + XOFFSET) then
-				  echo("map", "&lt;" .. mapTable[line][tile] .. "&gt;" .. " ")
+				  cecho("map", "&lt;" .. displayTile(mapTable[line][tile]) .. "&gt;" .. " ")
 				else
-				  echo("map", mapTable[line][tile] .. " ")
+				  if(mapTable[line][tile] == nil) then
+					  cecho("map", "!! ") -- mists
+					else
+				    cecho("map", displayTile(mapTable[line][tile]) .. " ")
+					end
 				end
 			end
 		  echo("map","\n")
@@ -3150,6 +3218,71 @@ createMiniConsole("map", windowWidth-400,10,350,350)
 clearWindow("map")
 mapTable = readMapFiles("/home/arcane/aa.txt")
 displayMap(mapTable, 0,0, 6)
+</script>
+			<eventHandlerList />
+		</Script>
+		<Script isActive="yes" isFolder="no">
+			<name>Gauges</name>
+			<packageName></packageName>
+			<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+hpbar = Geyser.Gauge:new({
+  name="hpbar",
+  x="50%", y="90%",
+  width="45%", height="20px",
+})
+hpbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #98f041, stop: 0.1 #8cf029, stop: 0.49 #66cc00, stop: 0.5 #52a300, stop: 1 #66cc00);
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+hpbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #78bd33, stop: 0.1 #6ebd20, stop: 0.49 #4c9900, stop: 0.5 #387000, stop: 1 #4c9900);
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+
+spbar = Geyser.Gauge:new({
+  name="spbar",
+  x="50%", y="95%",
+  width="45%", height="20px",
+})
+spbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2061cc, stop: 0.1 #145ace, stop: 0.49 #2564d1, stop: 0.5 #155ed8, stop: 1 #2560c4);
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+spbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #0d326d, stop: 0.1 #123266, stop: 0.49 #3061b5, stop: 0.5 #062559, stop: 1 #0c53ce);
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
+]])</script>
+			<eventHandlerList />
+		</Script>
+		<Script isActive="yes" isFolder="no">
+			<name>Misc</name>
+			<packageName></packageName>
+			<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+local windowWidth, windowHeight = getMainWindowSize()
+createMiniConsole("links", windowWidth-250,275,200,150)
+clearWindow("links")
+echoLink("links", "AAwiki\n", [[openUrl("http://www.aawiki.net")]], "AAwiki", true)
+echoLink("links", "Artificer Workbook\n", [[openUrl("https://www.aawiki.net/wiki/Artificers_-_Master_Workbook")]], "AAwiki", true)
 </script>
 			<eventHandlerList />
 		</Script>
