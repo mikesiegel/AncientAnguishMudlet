@@ -401,6 +401,11 @@ else
   maxhp = matches[3]
   sp = matches[4]
   maxsp = matches[5]
+	--print("Updating coords to " .. matches[6] .. matches[7] )
+	xCords = matches[6]
+  yCords = matches[7]
+	-- what is wrong with this? weird bug.
+  displayMap(mapTable, matches[6],matches[7], 6) 
 end
 -- dont like spacing here.
 
@@ -417,7 +422,7 @@ spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)</s
 			<colorTriggerFgColor>#000000</colorTriggerFgColor>
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList>
-				<string>^(.*)/(.*):(.*)/(.*)&gt;</string>
+				<string>^(.*)/(.*):(.*)/(.*):X:(.*):Y:(.*)&gt;</string>
 				<string>^HP: (.*)  SP: (.*)</string>
 			</regexCodeList>
 			<regexCodePropertyList>
@@ -3183,7 +3188,7 @@ function displayMap(mapTable, x,y, size)
 -- when we get to -12 it breaks.
 -- abs(-12 + 18) = 6, - 6 = 0? edge of world.
 
-
+print("Display map called with " .. x .. ":" .. y .. ":" .. size) 
 
   XOFFSET = 18
 	YOFFSET = 61
