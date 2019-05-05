@@ -390,10 +390,10 @@ displayMap(mapTable, matches[2],matches[3], 6)</script>
 		</Trigger>
 		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="yes" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 			<name>Prompt Trigger</name>
-			<script>debugc("Initial We got " .. table.getn(matches) .. "matches!")
+			<script>--debugc("Initial We got " .. table.getn(matches) .. "matches!")
 if(table.getn(matches)==3) then
-  debugc("We got " .. table.getn(matches) .. "matches!")
-  debugc("We're in combat")
+  --debugc("We got " .. table.getn(matches) .. "matches!")
+  --debugc("We're in combat")
   -- in combat
   hp = matches[2]
 	sp = matches[3]
@@ -402,7 +402,7 @@ if(table.getn(matches)==3) then
 else
   if(table.getn(matches)==5) then
 	-- Regular prompt
-  debugc("We got " .. table.getn(matches) .. "matches!")
+  --debugc("We got " .. table.getn(matches) .. "matches!")
   -- prompt
   hp = matches[2]
   maxhp = matches[3]
@@ -419,12 +419,21 @@ else
 	clearWindow("map")
   displayMap(mapTable, tonumber(xCords),tonumber(yCords), 6) 
 	-- `prompt set |HP|/|MAXHP|:|SP|/|MAXSP|&gt;|NEWLINE|CLIENT:X:|XCOORD|:Y:|YCOORD|:|NAME|:|CLASS|:|COINS|:|XP|`
-  charname = matches[4]
 	charclass = matches[5]
 	charcoins = matches[6]
-	charxp = matches[7]
+	charxp = matches[7] 
+	if url == nil then
+	  charname = matches[4]
+		first_letter = string.sub(charname, 1, 1)
+		debugc("Init charname")
+		url = "http://ancient.anguish.org/images/profiles/" .. first_letter:lower() .. "/" .. charname:lower() .. ".jpg"
+	  debugc("Trying to load " .. url) 
+		downloadFile("images/charpic.jpg", url)
+		GUI.CharProfile:setStyleSheet([[background-image : url(/images/charpic.jpg);background-size: auto;background-repeat: no-repeat;]]);
+  end
+	print("URL" .. url)
 	status_bar:echo("&lt;bold&gt;Name: " .. charname .. "&lt;br&gt;Class: " .. charclass .. "&lt;br&gt;Coins: " .. charcoins .. "&lt;br&gt;XP: " .. charxp .. "&lt;/bold&gt;")
-  deleteLine()
+	deleteLine()
 	end
 end
 
@@ -3209,12 +3218,12 @@ function displayMap(mapTable, x,y, size)
 -- when we get to -12 it breaks.
 -- abs(-12 + 18) = 6, - 6 = 0? edge of world.
 
-  debugc("Display map called with " .. x .. ":" .. y .. ":" .. size) 
+  --debugc("Display map called with " .. x .. ":" .. y .. ":" .. size) 
 
   XOFFSET = 18
 	YOFFSET = 61
-	debugc("Printing Y: " .. (math.abs(y + YOFFSET)-size) .. " to " .. math.abs(y + YOFFSET + size))
-  debugc("Printing X: " .. (math.abs(x + XOFFSET)-size) .. " to " .. math.abs(x + XOFFSET + size))
+	--debugc("Printing Y: " .. (math.abs(y + YOFFSET)-size) .. " to " .. math.abs(y + YOFFSET + size))
+  --debugc("Printing X: " .. (math.abs(x + XOFFSET)-size) .. " to " .. math.abs(x + XOFFSET + size))
 	for line = (math.abs(y - YOFFSET)-size), (math.abs(y - YOFFSET) + size) do
 	   for tile = (math.abs(x + XOFFSET)-size), math.abs(x + XOFFSET + size) do
 		    if line == (math.abs(y - YOFFSET)) and tile == (x + XOFFSET) then
@@ -3242,22 +3251,6 @@ function dumpMap(mapTable)
 	 end
 end
 
-</script>
-			<eventHandlerList />
-		</Script>
-		<Script isActive="yes" isFolder="no">
-			<name>Misc</name>
-			<packageName></packageName>
-			<script>-------------------------------------------------
---         Put your Lua functions here.        --
---                                             --
--- Note that you can also use external Scripts --
--------------------------------------------------
-local windowWidth, windowHeight = getMainWindowSize()
-createMiniConsole("links", windowWidth-250,375,200,150)
-clearWindow("links")
-echoLink("links", "AAwiki\n", [[openUrl("http://www.aawiki.net")]], "AAwiki", true)
-echoLink("links", "Artificer Workbook\n", [[openUrl("https://www.aawiki.net/wiki/Artificers_-_Master_Workbook")]], "AAwiki", true)
 </script>
 			<eventHandlerList />
 		</Script>
@@ -3306,6 +3299,13 @@ GUI.TopTitle = Geyser.Label:new({
 },GUI.TopHeader)
 GUI.TopTitle:setStyleSheet([[background-image : url(]] .. aa_path .. [[/images/logo.png);background-repeat: no-repeat;]]);
 
+GUI.CharProfile = Geyser.Label:new({
+  name = "GUI.CharProfile",
+  x = "55%", y = 0,
+  width = 250,
+  height = 250,
+},GUI.TopHeader)
+
 
 --BOTTOM SECTION--
 GUI.Bottom = Geyser.Label:new({
@@ -3327,6 +3327,7 @@ GUI.Right:setStyleSheet([[ background-image : url(]] .. aa_path .. [[/images/roc
 raiseWindow("hpbar")
 raiseWindow("spbar")
 raiseWindow("map")
+raiseWindow("links")
 local windowWidth, windowHeight = getMainWindowSize()
 setBorderBottom(windowHeight * .1)</script>
 				<eventHandlerList />
@@ -3434,7 +3435,7 @@ raiseWindow("map")</script>
 -------------------------------------------------
 status_bar = Geyser.Label:new({
   name = "status_bar",
-  x = "85%", y = "35%",
+  x = "85%", y = "15%",
   width = "15%", height = "50%",
   fgColor = "black",
   message = [[&lt;center&gt;INIT&lt;/center&gt;]]
@@ -3443,6 +3444,22 @@ status_bar:setColor(0,0,0,0)
 status_bar:setFontSize( 12)
 status_bar:setBold(true)
 
+</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>Links</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+local windowWidth, windowHeight = getMainWindowSize()
+createMiniConsole("links", windowWidth-150,375,200,150)
+clearWindow("links")
+echoLink("links", "AAwiki\n", [[openUrl("http://www.aawiki.net")]], "AAwiki", true)
+echoLink("links", "Ficer book\n", [[openUrl("https://www.aawiki.net/wiki/Artificers_-_Master_Workbook")]], "AAwiki", true)
 </script>
 				<eventHandlerList />
 			</Script>
