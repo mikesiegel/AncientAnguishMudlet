@@ -1,4 +1,4 @@
-ncient Anguish Mudlet Profile
+# Ancient Anguish Mudlet Profile
 
 Intended to function with [Ancient Anguish](http://ancient.anguish.org) using [Mudlet](https://www.mudlet.org/)
 
