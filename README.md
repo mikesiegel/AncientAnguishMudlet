@@ -21,11 +21,10 @@ To use mapper currently:
 - Common buttons (who etc)
 - Chat windows
 - Highlight stuff like pipe running out
-- Status indicators for donator prompt (ie stuffed, drunk)
-- 
+- Status indicators for donator prompt (ie stuffed, drunk) 
 
 ## WARNING
 
 This is in development. If your characters dies because of it, not my problem.
 
-This will not implement 'auto triggers' which are against AA rules!
+This will not implement 'auto triggers' which are against AA rules! For example, we can highlght your pipe has run out but we will not refill it for you.
