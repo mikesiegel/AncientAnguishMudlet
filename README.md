@@ -12,6 +12,11 @@ To use mapper currently:
 `asciiart off` and then `exa map`. This will be updated to support prompt X/Y coordinates (donators) and 'landmark' short room desc.
 ![mudletpic](pic.png "Early pic")
 
+## Set up
+- Import the profile and copy over images
+- Set your prompt in game as follows (profile will supress second line)
+`prompt set |HP|/|MAXHP|:|SP|/|MAXSP|>|NEWLINE|CLIENT:X:|XCOORD|:Y:|YCOORD|:|NAME|:|CLASS|:|COINS|:|XP|`
+
 ## Bugs
 - Picking up coords from prompt are an issue
 

@@ -388,29 +388,48 @@ displayMap(mapTable, matches[2],matches[3], 6)</script>
 				<integer>1</integer>
 			</regexCodePropertyList>
 		</Trigger>
-		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="yes" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="yes" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 			<name>Prompt Trigger</name>
-			<script>
+			<script>debugc("Initial We got " .. table.getn(matches) .. "matches!")
 if(table.getn(matches)==3) then
+  debugc("We got " .. table.getn(matches) .. "matches!")
+  debugc("We're in combat")
   -- in combat
   hp = matches[2]
 	sp = matches[3]
+	GUI.hpbar:setValue(tonumber(hp), tonumber(maxhp),  "  HP: " .. hp .. "/" .. maxhp)
+  GUI.spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)
 else
+  if(table.getn(matches)==5) then
+	-- Regular prompt
+  debugc("We got " .. table.getn(matches) .. "matches!")
   -- prompt
   hp = matches[2]
   maxhp = matches[3]
   sp = matches[4]
   maxsp = matches[5]
 	--print("Updating coords to " .. matches[6] .. matches[7] )
-	xCords = matches[6]
-  yCords = matches[7]
-	-- what is wrong with this? weird bug.
-  displayMap(mapTable, matches[6],matches[7], 6) 
+	GUI.hpbar:setValue(tonumber(hp), tonumber(maxhp),  "  HP: " .. hp .. "/" .. maxhp)
+  GUI.spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)
+  end
+	if(table.getn(matches)==7) then
+	-- CLIENT prompt
+	xCords = matches[2]
+  yCords = matches[3]
+	clearWindow("map")
+  displayMap(mapTable, tonumber(xCords),tonumber(yCords), 6) 
+	-- `prompt set |HP|/|MAXHP|:|SP|/|MAXSP|&gt;|NEWLINE|CLIENT:X:|XCOORD|:Y:|YCOORD|:|NAME|:|CLASS|:|COINS|:|XP|`
+  charname = matches[4]
+	charclass = matches[5]
+	charcoins = matches[6]
+	charxp = matches[7]
+	status_bar:echo("&lt;bold&gt;Name: " .. charname .. "&lt;br&gt;Class: " .. charclass .. "&lt;br&gt;Coins: " .. charcoins .. "&lt;br&gt;XP: " .. charxp .. "&lt;/bold&gt;")
+  deleteLine()
+	end
 end
--- dont like spacing here.
 
-hpbar:setValue(tonumber(hp), tonumber(maxhp),  "  HP: " .. hp .. "/" .. maxhp)
-spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)</script>
+
+</script>
 			<triggerType>0</triggerType>
 			<conditonLineDelta>0</conditonLineDelta>
 			<mStayOpen>0</mStayOpen>
@@ -422,10 +441,12 @@ spbar:setValue(tonumber(sp), tonumber(maxsp), "  SP: " .. sp .. "/" .. maxsp)</s
 			<colorTriggerFgColor>#000000</colorTriggerFgColor>
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList>
-				<string>^(.*)/(.*):(.*)/(.*):X:(.*):Y:(.*)&gt;</string>
+				<string>^(.*)/(.*):(.*)/(.*)&gt;</string>
 				<string>^HP: (.*)  SP: (.*)</string>
+				<string>^CLIENT:X:(.*):Y:(.*):(.*):(.*):(.*):(.*)</string>
 			</regexCodeList>
 			<regexCodePropertyList>
+				<integer>1</integer>
 				<integer>1</integer>
 				<integer>1</integer>
 			</regexCodePropertyList>
@@ -3141,7 +3162,7 @@ end
 --                                             --
 -- Note that you can also use external Scripts --
 -------------------------------------------------
-mapTable = {}
+if mapTable == nil then mapTable = {} end
 
 function readMapFiles(file)
     MAPTILEWIDTH = 2
@@ -3188,21 +3209,23 @@ function displayMap(mapTable, x,y, size)
 -- when we get to -12 it breaks.
 -- abs(-12 + 18) = 6, - 6 = 0? edge of world.
 
-print("Display map called with " .. x .. ":" .. y .. ":" .. size) 
+  debugc("Display map called with " .. x .. ":" .. y .. ":" .. size) 
 
   XOFFSET = 18
 	YOFFSET = 61
-	--print("Printing Y: " .. ((y + YOFFSET)-size) .. " to " .. (y + YOFFSET + size))
-  --print("Printing X: " .. ((x + XOFFSET)-size) .. " to " .. (x + XOFFSET + size))
+	debugc("Printing Y: " .. (math.abs(y + YOFFSET)-size) .. " to " .. math.abs(y + YOFFSET + size))
+  debugc("Printing X: " .. (math.abs(x + XOFFSET)-size) .. " to " .. math.abs(x + XOFFSET + size))
 	for line = (math.abs(y - YOFFSET)-size), (math.abs(y - YOFFSET) + size) do
 	   for tile = (math.abs(x + XOFFSET)-size), math.abs(x + XOFFSET + size) do
 		    if line == (math.abs(y - YOFFSET)) and tile == (x + XOFFSET) then
-				  cecho("map", "&lt;" .. displayTile(mapTable[line][tile]) .. "&gt;" .. " ")
+				  cecho("map", "&lt;" .. displayTile(mapTable[line][tile]) .. "&gt;")
 				else
 				  if(mapTable[line][tile] == nil) then
 					  cecho("map", "!! ") -- mists
 					else
-				    cecho("map", displayTile(mapTable[line][tile]) .. " ")
+				    cecho("map", displayTile(mapTable[line][tile]))
+						-- fix spacing here
+						cecho("map", " ")
 					end
 				end
 			end
@@ -3219,63 +3242,7 @@ function dumpMap(mapTable)
 	 end
 end
 
-local windowWidth, windowHeight = getMainWindowSize()
-createMiniConsole("map", windowWidth-400,120,350,350)
-clearWindow("map")
-mapTable = readMapFiles("/home/arcane/aa.txt")
-displayMap(mapTable, 0,0, 6)
 </script>
-			<eventHandlerList />
-		</Script>
-		<Script isActive="yes" isFolder="no">
-			<name>Gauges</name>
-			<packageName></packageName>
-			<script>-------------------------------------------------
---         Put your Lua functions here.        --
---                                             --
--- Note that you can also use external Scripts --
--------------------------------------------------
-hpbar = Geyser.Gauge:new({
-  name="hpbar",
-  x="50%", y="90%",
-  width="45%", height="20px",
-})
-hpbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #98f041, stop: 0.1 #8cf029, stop: 0.49 #66cc00, stop: 0.5 #52a300, stop: 1 #66cc00);
-    border-top: 1px black solid;
-    border-left: 1px black solid;
-    border-bottom: 1px black solid;
-    border-radius: 7;
-    padding: 3px;
-]])
-hpbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #78bd33, stop: 0.1 #6ebd20, stop: 0.49 #4c9900, stop: 0.5 #387000, stop: 1 #4c9900);
-    border-width: 1px;
-    border-color: black;
-    border-style: solid;
-    border-radius: 7;
-    padding: 3px;
-]])
-
-spbar = Geyser.Gauge:new({
-  name="spbar",
-  x="50%", y="95%",
-  width="45%", height="20px",
-})
-spbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2061cc, stop: 0.1 #145ace, stop: 0.49 #2564d1, stop: 0.5 #155ed8, stop: 1 #2560c4);
-    border-top: 1px black solid;
-    border-left: 1px black solid;
-    border-bottom: 1px black solid;
-    border-radius: 7;
-    padding: 3px;
-]])
-spbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #0d326d, stop: 0.1 #123266, stop: 0.49 #3061b5, stop: 0.5 #062559, stop: 1 #0c53ce);
-    border-width: 1px;
-    border-color: black;
-    border-style: solid;
-    border-radius: 7;
-    padding: 3px;
-]])
-raiseWindow("hpbar")
-raiseWindow("spbar")</script>
 			<eventHandlerList />
 		</Script>
 		<Script isActive="yes" isFolder="no">
@@ -3294,70 +3261,192 @@ echoLink("links", "Artificer Workbook\n", [[openUrl("https://www.aawiki.net/wiki
 </script>
 			<eventHandlerList />
 		</Script>
-		<Script isActive="yes" isFolder="no">
-			<name>UI</name>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>GUI</name>
 			<packageName></packageName>
 			<script>-------------------------------------------------
 --         Put your Lua functions here.        --
 --                                             --
 -- Note that you can also use external Scripts --
 -------------------------------------------------
-local windowWidth, windowHeight = getMainWindowSize()
-aa_logo = Geyser.Label:new({
-  name = "aa_logo",
-	bgColor = "gray",
+GUI = GUI or {}</script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>NewUI</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+--TOP SECTION--
+
+aa_path = "/home/arcane/AncientAnguishMudlet"
+
+GUI.Top = Geyser.Label:new({
+  name = "GUI.Top",
   x = 0, y = 0,
-  width = "400px", height = "100px",
+  width = "100%",
+  height = "15%",
 })
-aa_logo:setStyleSheet([[
-  background-color: rgba(0,0,0,0%);
+GUI.Top:setStyleSheet([[ background-image : url(]] .. aa_path .. [[/images/rock01.jpg);background-repeat: repeat;]]);
+
+GUI.TopHeader = Geyser.Container:new({
+  name = "GUI.TopHeader",
+  x = 0, y = 0,
+  width = "100%",
+  height = 125,
+},GUI.Top)
+
+GUI.TopTitle = Geyser.Label:new({
+  name = "GUI.TopTitle",
+  x = 0, y = 10,
+  width = 600,
+  height = 70,
+},GUI.TopHeader)
+GUI.TopTitle:setStyleSheet([[background-image : url(]] .. aa_path .. [[/images/logo.png);background-repeat: no-repeat;]]);
+
+
+--BOTTOM SECTION--
+GUI.Bottom = Geyser.Label:new({
+  name = "GUI.Bottom",
+  x = 0, y = "90%",
+  width = "100%",
+  height = "10%",
+})
+GUI.Bottom:setStyleSheet([[ background-image : url(]] .. aa_path .. [[/images/rock01.jpg);background-repeat: repeat;]]);
+--RIGHT SECTION--
+
+GUI.Right = Geyser.Label:new({
+  name = "GUI.Right",
+  x = "85%", y = "10%",
+  width = "100%",
+  height = "81%",
+})
+GUI.Right:setStyleSheet([[ background-image : url(]] .. aa_path .. [[/images/rock01.jpg);background-repeat: repeat;]]);
+raiseWindow("hpbar")
+raiseWindow("spbar")
+raiseWindow("map")
+local windowWidth, windowHeight = getMainWindowSize()
+setBorderBottom(windowHeight * .1)</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>Gauges</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+GUI.hpbar = Geyser.Gauge:new({
+  name="hpbar",
+  x="5%", y="91%",
+  width="45%", height="20px",
+})
+GUI.hpbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #98f041, stop: 0.1 #8cf029, stop: 0.49 #66cc00, stop: 0.5 #52a300, stop: 1 #66cc00);
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
 ]])
-setBorderTop(windowHeight * .2)
-setBorderBottom(5)
-aa_logo:setBackgroundImage([[/home/arcane/mudlet-data/AA.gif]]) 
-aa_topbar = Geyser.Label:new({
-  name = "aa_topbar",
-	bgColor = "gray",
-  x = 330, y = 0,
-  width = "400px", height = "100px",
-})
-aa_topbar:setStyleSheet([[
-  background-color: rgba(0,0,0,0%);
+GUI.hpbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #78bd33, stop: 0.1 #6ebd20, stop: 0.49 #4c9900, stop: 0.5 #387000, stop: 1 #4c9900);
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
 ]])
 
-aa_rightbar = Geyser.Label:new({
-  name = "aa_rightbar",
-	bgColor = "gray",
-  x = 630, y = 0,
-  width = "370px", height = "100px",
+GUI.spbar = Geyser.Gauge:new({
+  name="spbar",
+  x="5%", y="95%",
+  width="45%", height="20px",
 })
-aa_topbar:setStyleSheet([[
-  background-color: rgba(0,0,0,0%);
+GUI.spbar.front:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2061cc, stop: 0.1 #145ace, stop: 0.49 #2564d1, stop: 0.5 #155ed8, stop: 1 #2560c4);
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
 ]])
-aa_rightbar:setStyleSheet([[
-  background-color: rgba(0,0,0,0%);
+GUI.spbar.back:setStyleSheet([[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #0d326d, stop: 0.1 #123266, stop: 0.49 #3061b5, stop: 0.5 #062559, stop: 1 #0c53ce);
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
 ]])
-aa_rightbar:setBackgroundImage([[/home/arcane/mudlet-data/topbar2018.gif]])
-aa_topbar:setBackgroundImage([[/home/arcane/mudlet-data/topbar2018.gif]])
-
-aa_leftbar = Geyser.Label:new({
-  name = "aa_leftbar",
-	bgColor = "gray",
-  x = 0, y = 100,
-  width = "10px", height = "100px",
-})
-aa_leftbar:setBackgroundImage([[/home/arcane/mudlet-data/leftbar2018.gif]])
-
-aa_leftbar:setStyleSheet([[
-  background-color: rgba(0,0,0,0%);
-	background-repeat: repeat-y;
-]])
-
-setBorderLeft(10)
 raiseWindow("hpbar")
 raiseWindow("spbar")</script>
-			<eventHandlerList />
-		</Script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>MapWindow</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+
+map_container = Geyser.Container:new({
+  name = "map_container",    -- give it a unique name here
+  x="%70", y="0",                   -- have it start at the top-left corner of mudlet
+  width = "32%", height="30%", -- with a width of 200, and a height of the full screen, hence 100%
+})
+map_background = Geyser.Label:new({
+  name = "map_background",
+  x = 0, y = 0,
+  width = "100%", height = "100%",
+}, map_container)
+
+-- change the location to your picture
+-- on windows, use / to separate folders still, not \
+map_background:setStyleSheet[[
+  border-image: url(/home/arcane/AncientAnguishMudlet/images/mapedge.jpg);
+]]
+local windowWidth, windowHeight = getMainWindowSize()
+map = Geyser.MiniConsole:new({
+  name="map",
+  x="2%", y="2%",
+  autoWrap = false,
+  color = "black",
+  scrollBar = false,
+  fontSize = 8,
+  width="90%", height="95%",
+}, map_container)
+--createMiniConsole("map", windowWidth-370,0,350,275)
+clearWindow("map")
+mapTable = readMapFiles("/home/arcane/aa.txt")
+displayMap(mapTable, 0,0, 6)
+raiseWindow("map")</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>Status Bar</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+status_bar = Geyser.Label:new({
+  name = "status_bar",
+  x = "85%", y = "35%",
+  width = "15%", height = "50%",
+  fgColor = "black",
+  message = [[&lt;center&gt;INIT&lt;/center&gt;]]
+})
+status_bar:setColor(0,0,0,0)
+status_bar:setFontSize( 12)
+status_bar:setBold(true)
+
+</script>
+				<eventHandlerList />
+			</Script>
+		</ScriptGroup>
 	</ScriptPackage>
 	<KeyPackage />
 	<VariablePackage>
