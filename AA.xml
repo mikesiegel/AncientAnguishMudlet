@@ -3394,7 +3394,7 @@ raiseWindow("spbar")</script>
 
 map_container = Geyser.Container:new({
   name = "map_container",    -- give it a unique name here
-  x="%70", y="0",                   -- have it start at the top-left corner of mudlet
+  x="70%", y="0",                   -- have it start at the top-left corner of mudlet
   width = "32%", height="30%", -- with a width of 200, and a height of the full screen, hence 100%
 })
 map_background = Geyser.Label:new({
